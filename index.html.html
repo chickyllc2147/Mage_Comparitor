@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mage DPM Comparison — I/L vs F/P vs B/W</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0B0E18;
+    --bg-panel:#141826;
+    --bg-sunk:#0E1220;
+    --line:#28304A;
+    --il:#7FE3FF;
+    --il-deep:#2E7A94;
+    --fp:#FF8A3D;
+    --fp-deep:#9A4A18;
+    --bw:#B98CFF;
+    --bw-deep:#5B3A99;
+    --text-hi:#EDF1FA;
+    --text-mid:#9AA6C2;
+    --text-low:#65708C;
+    --warn:#FFC24D;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  body{
+    background:
+      radial-gradient(ellipse 800px 480px at 8% -8%, rgba(127,227,255,0.10), transparent 62%),
+      radial-gradient(ellipse 800px 480px at 95% 108%, rgba(255,138,61,0.09), transparent 62%),
+      var(--bg-deep);
+    color:var(--text-hi);
+    font-family:var(--font-body);
+    min-height:100vh;
+    padding:44px 22px 90px;
+    display:flex;
+    justify-content:center;
+  }
+
+  .wrap{ width:100%; max-width:960px; }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    color:var(--text-low);
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:7px; height:7px;
+    background:linear-gradient(135deg, var(--il), var(--fp));
+    display:inline-block;
+  }
+
+  h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(27px, 4.3vw, 41px);
+    letter-spacing:-0.012em;
+    line-height:1.08;
+  }
+  .il-word{ color:var(--il); }
+  .fp-word{ color:var(--fp); }
+  .bw-word{ color:var(--bw); }
+
+  .subhead{
+    font-size:14.5px; color:var(--text-mid);
+    max-width:62ch; margin-top:13px; line-height:1.58;
+  }
+
+  /* ---------- Controls ---------- */
+  .target-row{
+    display:flex; align-items:center; gap:14px;
+    flex-wrap:wrap;
+    margin:34px 0 24px;
+  }
+  .target-label{
+    font-family:var(--font-mono); font-size:11.5px;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--text-low);
+  }
+  .target-toggle{
+    display:flex; background:var(--bg-panel);
+    border:1px solid var(--line); border-radius:8px; overflow:hidden;
+  }
+  .target-toggle button{
+    font-family:var(--font-mono); font-size:13px; font-weight:600;
+    color:var(--text-mid); background:transparent; border:none;
+    padding:9px 18px; cursor:pointer; transition:all .15s ease;
+    border-right:1px solid var(--line);
+  }
+  .target-toggle button:last-child{ border-right:none; }
+  .target-toggle button:hover{ color:var(--text-hi); }
+  .target-toggle button.active{
+    background:linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+    color:var(--text-hi);
+  }
+
+  .class-row{
+    display:flex; align-items:center; gap:14px;
+    flex-wrap:wrap; margin:0 0 22px;
+  }
+  .class-toggle{
+    display:flex; background:var(--bg-panel);
+    border:1px solid var(--line); border-radius:8px; overflow:hidden;
+  }
+  .class-toggle button{
+    font-family:var(--font-mono); font-size:13px; font-weight:600;
+    color:var(--text-low); background:transparent; border:none;
+    padding:9px 20px; cursor:pointer; transition:all .15s ease;
+    border-right:1px solid var(--line);
+  }
+  .class-toggle button:last-child{ border-right:none; }
+  .class-toggle button:hover{ color:var(--text-mid); }
+  .class-toggle button[data-k="IL"].active{
+    color:var(--il); background:linear-gradient(180deg, rgba(127,227,255,0.16), rgba(127,227,255,0.04));
+  }
+  .class-toggle button[data-k="FP"].active{
+    color:var(--fp); background:linear-gradient(180deg, rgba(255,138,61,0.16), rgba(255,138,61,0.04));
+  }
+  .class-toggle button[data-k="BW"].active{
+    color:var(--bw); background:linear-gradient(180deg, rgba(185,140,255,0.16), rgba(185,140,255,0.04));
+  }
+  .class-toggle button.locked{ cursor:not-allowed; }
+  .class-hint{
+    font-family:var(--font-mono); font-size:11px; color:var(--text-low);
+  }
+
+  .card.off, .deriv-item.off{ display:none; }
+  .triple.two{ grid-template-columns:repeat(2,1fr); }
+  @media (max-width:720px){ .triple.two{ grid-template-columns:1fr; } }
+  .derivs.two{ grid-template-columns:repeat(2,1fr); }
+  @media (max-width:720px){ .derivs.two{ grid-template-columns:1fr; } }
+  .bar-legend.two{ grid-template-columns:repeat(2,1fr); }
+
+  .panels{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:20px; }
+  @media (max-width:640px){ .panels{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:var(--bg-panel); border:1px solid var(--line);
+    border-radius:13px; padding:24px 22px 22px; position:relative; overflow:hidden;
+  }
+  .panel::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--text-mid), transparent);
+    opacity:.5;
+  }
+  .panel-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px; }
+  .panel-title{ font-family:var(--font-display); font-size:14.5px; font-weight:600; letter-spacing:.02em; color:var(--text-hi); }
+  .panel-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-low); }
+
+  .value-input{
+    font-family:var(--font-mono); font-size:32px; font-weight:700;
+    background:transparent; border:none; color:var(--text-hi);
+    width:6.5ch; outline:none; padding:0; -moz-appearance:textfield; margin-bottom:14px;
+  }
+  .value-input::-webkit-outer-spin-button,.value-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+  input[type=range]{
+    -webkit-appearance:none; width:100%; height:4px; border-radius:2px;
+    background:var(--line); outline:none; margin:6px 0 10px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+    cursor:pointer; border:3px solid var(--bg-panel);
+    background:var(--text-hi); box-shadow:0 0 12px rgba(237,241,250,.5);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px; height:18px; border-radius:50%; cursor:pointer;
+    border:3px solid var(--bg-panel); background:var(--text-hi);
+  }
+  .range-bounds{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--text-low); }
+
+  /* ---------- Comparison result ---------- */
+  .result{
+    background:var(--bg-panel); border:1px solid var(--line);
+    border-radius:13px; padding:26px 24px; margin-bottom:18px;
+  }
+
+  .triple{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+    padding-bottom:24px; border-bottom:1px solid var(--line); margin-bottom:22px;
+  }
+  @media (max-width:720px){ .triple{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--bg-sunk); border:1px solid var(--line);
+    border-radius:11px; padding:18px 14px 16px;
+    text-align:center; position:relative;
+    transition:border-color .2s ease;
+  }
+  .card.top{ border-width:1px; }
+  .card.il.top{ border-color:rgba(127,227,255,.55); }
+  .card.fp.top{ border-color:rgba(255,138,61,.55); }
+  .card.bw.top{ border-color:rgba(185,140,255,.55); }
+  .card.na{ opacity:.42; }
+  .card.sub{ border-style:dashed; }
+  .card.sub .card-skill{ color:var(--warn); border-color:rgba(255,194,77,.35); }
+
+  .rank{
+    position:absolute; top:10px; left:12px;
+    font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em;
+    color:var(--text-low);
+  }
+  .card.top .rank{ color:var(--warn); }
+
+  .card-name{
+    font-family:var(--font-display); font-size:12.5px; font-weight:600;
+    letter-spacing:.05em; margin-bottom:9px;
+  }
+  .card.il .card-name{ color:var(--il); }
+  .card.fp .card-name{ color:var(--fp); }
+  .card.bw .card-name{ color:var(--bw); }
+
+  .card-skill{
+    display:inline-block; font-family:var(--font-mono); font-size:9.5px;
+    letter-spacing:.02em; line-height:1.35;
+    padding:4px 9px; border-radius:20px; margin-bottom:13px;
+    border:1px solid var(--line); background:var(--bg-panel); color:var(--text-mid);
+  }
+  .card.il .card-skill{ color:var(--il); border-color:rgba(127,227,255,.26); }
+  .card.fp .card-skill{ color:var(--fp); border-color:rgba(255,138,61,.26); }
+  .card.bw .card-skill{ color:var(--bw); border-color:rgba(185,140,255,.26); }
+
+  .card-dpm{
+    font-family:var(--font-mono); font-size:clamp(20px,2.9vw,26px);
+    font-weight:700; line-height:1; color:var(--text-hi);
+  }
+  .card-unit{
+    font-family:var(--font-mono); font-size:9px; letter-spacing:.14em;
+    color:var(--text-low); margin-top:6px;
+  }
+  .card-rel{
+    font-family:var(--font-mono); font-size:11px; font-weight:600;
+    margin-top:11px; padding-top:10px; border-top:1px solid var(--line);
+    color:var(--text-mid);
+  }
+
+  .notice{
+    margin-top:20px; padding:13px 15px;
+    background:rgba(255,194,77,0.07);
+    border:1px solid rgba(255,194,77,0.32);
+    border-left:3px solid var(--warn);
+    border-radius:9px;
+    font-size:12.5px; line-height:1.55; color:var(--text-mid);
+  }
+
+  /* gap bar */
+  .gapwrap{ margin-bottom:6px; }
+  .gap-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    gap:14px; flex-wrap:wrap; margin-bottom:10px;
+  }
+  .gap-label{
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--text-low);
+  }
+  .gap-value{ font-family:var(--font-mono); font-size:13.5px; font-weight:700; text-align:right; }
+
+  .bar{
+    height:12px; border-radius:6px; background:var(--bg-sunk);
+    border:1px solid var(--line); overflow:hidden; display:flex;
+  }
+  .bar-il{ background:linear-gradient(90deg, var(--il-deep), var(--il)); transition:width .22s ease; }
+  .bar-fp{ background:linear-gradient(90deg, var(--fp), var(--fp-deep)); transition:width .22s ease; }
+  .bar-bw{ background:linear-gradient(90deg, var(--bw-deep), var(--bw)); transition:width .22s ease; }
+  .bar-legend{
+    display:grid; grid-template-columns:repeat(3,1fr); text-align:center;
+    font-family:var(--font-mono); font-size:10.5px; color:var(--text-low); margin-top:7px;
+  }
+
+  /* marginal grid */
+  .derivs{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:22px; }
+  @media (max-width:720px){ .derivs{ grid-template-columns:1fr; } }
+  .deriv-item{
+    background:var(--bg-sunk); border:1px solid var(--line);
+    border-radius:9px; padding:13px 15px;
+  }
+  .deriv-item.il{ border-left:2px solid var(--il); }
+  .deriv-item.fp{ border-left:2px solid var(--fp); }
+  .deriv-item.bw{ border-left:2px solid var(--bw); }
+  .deriv-label{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-low); margin-bottom:4px; }
+  .deriv-value{ font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--text-hi); }
+  .deriv-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-mid); margin-top:3px; }
+
+  /* ---------- Summary ---------- */
+  .summary{
+    background:var(--bg-panel); border:1px solid var(--line);
+    border-radius:13px; padding:28px 26px; margin-top:22px;
+  }
+  .summary h2{
+    font-family:var(--font-display); font-size:18px; font-weight:600;
+    color:var(--text-hi); margin-bottom:8px;
+  }
+  .summary-sub{
+    font-size:13.5px; line-height:1.6; color:var(--text-mid);
+    margin-bottom:20px; max-width:76ch;
+  }
+  .summary-sub strong{ color:var(--text-hi); font-weight:600; }
+
+  .sum-table{
+    width:100%; border-collapse:collapse; font-family:var(--font-mono);
+    margin-bottom:22px;
+  }
+  .sum-table th{
+    font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    font-weight:500; color:var(--text-low); text-align:right;
+    padding:0 10px 10px; border-bottom:1px solid var(--line);
+  }
+  .sum-table th:first-child{ text-align:left; }
+  .sum-table th.c-il{ color:var(--il); }
+  .sum-table th.c-fp{ color:var(--fp); }
+  .sum-table th.c-bw{ color:var(--bw); }
+  .sum-table td{
+    padding:13px 10px; border-bottom:1px solid var(--line);
+    text-align:right; font-size:14px; color:var(--text-mid);
+    white-space:nowrap;
+  }
+  .sum-table tr:last-child td{ border-bottom:none; }
+  .sum-table td span{
+    display:block; font-size:10px; color:var(--text-low); margin-top:3px;
+  }
+  .sum-table td.tgt{
+    text-align:left; font-size:15px; font-weight:700; color:var(--text-hi);
+  }
+  .sum-table td.lead{ color:var(--text-hi); font-weight:700; }
+  .sum-table td.lead span{ color:var(--warn); }
+  .sum-table td.spread{
+    color:var(--text-mid); font-weight:400; font-size:11.5px;
+    white-space:normal; line-height:1.45; min-width:150px;
+  }
+  .sum-table td.spread strong{ color:var(--text-hi); font-size:13px; }
+  .sum-table tr.mixed td{ background:rgba(255,194,77,0.045); }
+  .sum-table tr.mixed td.tgt{ font-size:12.5px; letter-spacing:.03em; }
+
+  .sum-points{ margin:0 0 0 18px; }
+  .sum-points li{
+    font-size:13.5px; line-height:1.62; color:var(--text-mid); margin-bottom:9px;
+  }
+  .sum-points strong{ color:var(--text-hi); font-weight:600; }
+
+  /* ---------- Methodology ---------- */
+  .method{
+    background:var(--bg-panel); border:1px solid var(--line);
+    border-radius:13px; padding:28px 26px; margin-top:26px;
+  }
+  .method h2{
+    font-family:var(--font-display); font-size:18px; font-weight:600;
+    color:var(--text-hi); margin-bottom:6px;
+  }
+  .method h3{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--text-low);
+    margin:24px 0 9px; padding-top:16px; border-top:1px solid var(--line);
+  }
+  .method h3:first-of-type{ border-top:none; padding-top:0; margin-top:18px; }
+  .method p{ font-size:13.5px; line-height:1.65; color:var(--text-mid); margin-bottom:10px; }
+  .method p strong{ color:var(--text-hi); font-weight:600; }
+  .method ul{ margin:8px 0 12px 18px; }
+  .method li{ font-size:13.5px; line-height:1.6; color:var(--text-mid); margin-bottom:5px; }
+
+  .bufflist{
+    display:grid;
+    grid-template-columns:repeat(6, 1fr);
+    gap:10px;
+    margin:16px 0 18px;
+  }
+  @media (max-width:640px){
+    .bufflist{ grid-template-columns:repeat(4, 1fr); }
+  }
+  .buff{
+    background:var(--bg-sunk);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:11px 6px 9px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .buff img{
+    width:38px; height:38px;
+    image-rendering:pixelated;
+    display:block;
+  }
+  .buff figcaption{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    line-height:1.3;
+    color:var(--text-mid);
+    letter-spacing:.01em;
+  }
+  .buff.buff-split{
+    border-color:var(--warn);
+    background:linear-gradient(180deg, rgba(255,194,77,0.08), var(--bg-sunk));
+  }
+  .buff.buff-split figcaption{ color:var(--warn); }
+  .buff-variant{ color:var(--text-low); font-size:8.5px; }
+
+  .sub-head{
+    font-family:var(--font-display); font-size:14px; font-weight:600;
+    color:var(--text-hi); margin:18px 0 12px;
+  }
+  .omitted{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+  @media (max-width:640px){ .omitted{ grid-template-columns:1fr; } }
+  .omit-card{
+    display:flex; gap:13px; align-items:flex-start;
+    background:var(--bg-sunk); border:1px solid var(--line);
+    border-radius:10px; padding:14px 15px;
+  }
+  .omit-card img{
+    width:38px; height:38px; image-rendering:pixelated;
+    flex-shrink:0; opacity:.5;
+    filter:grayscale(1);
+  }
+  .omit-name{
+    font-family:var(--font-mono); font-size:12px; font-weight:600;
+    color:var(--text-hi); margin-bottom:6px;
+  }
+  .omit-why{ font-size:12.5px; line-height:1.55; color:var(--text-mid); margin:0; }
+
+  .cmd{
+    font-family:var(--font-mono); font-size:12.5px;
+    background:var(--bg-sunk); border:1px solid var(--line);
+    border-radius:5px; padding:2px 7px; color:var(--text-hi);
+  }
+
+  table.grid{
+    width:100%; border-collapse:collapse; margin:12px 0 14px;
+    font-family:var(--font-mono); font-size:12px;
+  }
+  table.grid th{
+    text-align:left; color:var(--text-low); font-weight:500;
+    padding:7px 10px; border-bottom:1px solid var(--line); font-size:11px;
+    letter-spacing:.05em; text-transform:uppercase;
+  }
+  table.grid td{
+    padding:7px 10px; border-bottom:1px solid var(--line); color:var(--text-mid);
+  }
+  table.grid td:first-child{ color:var(--text-hi); }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">YunaMS &middot; Test Team &middot; Three-Way Mage Comparison</div>
+  <h1><span class="il-word">I/L</span> vs <span class="fp-word">F/P</span> vs <span class="bw-word">B/W</span> — DPM Comparison</h1>
+  <p class="subhead">
+    Set a build with the sliders to compare predicted DPM across Ice/Lightning, Fire/Poison and Blaze Wizard at the
+    same INT and MAGIC ATK. All three are modelled from independently collected test data under identical buff
+    conditions, so the gaps shown are like-for-like.
+  </p>
+
+  <div class="target-row">
+    <span class="target-label">Target Count</span>
+    <div class="target-toggle" id="targetToggle">
+      <button data-t="1" class="active">1</button>
+      <button data-t="5">5</button>
+      <button data-t="6">6</button>
+      <button data-t="8">8</button>
+    </div>
+  </div>
+
+  <div class="class-row">
+    <span class="target-label">Compare</span>
+    <div class="class-toggle" id="classToggle">
+      <button data-k="IL" class="active">I/L</button>
+      <button data-k="FP" class="active">F/P</button>
+      <button data-k="BW" class="active">B/W</button>
+    </div>
+    <span class="class-hint" id="classHint">all three</span>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">INT</span>
+        <span class="panel-sub">Tested 1000&ndash;3700</span>
+      </div>
+      <input type="number" id="intInput" class="value-input" value="2350" min="1000" max="3700" step="1">
+      <input type="range" id="intSlider" min="1000" max="3700" step="1" value="2350">
+      <div class="range-bounds"><span>1000</span><span>3700</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">MAGIC ATK</span>
+        <span class="panel-sub">Tested 150&ndash;1700</span>
+      </div>
+      <input type="number" id="matkInput" class="value-input" value="967" min="150" max="1700" step="1">
+      <input type="range" id="matkSlider" min="150" max="1700" step="1" value="967">
+      <div class="range-bounds"><span>150</span><span>1700</span></div>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="triple" id="triple">
+      <div class="card il" id="cardIL">
+        <div class="rank" id="rankIL">&mdash;</div>
+        <div class="card-name">ICE / LIGHTNING</div>
+        <div class="card-skill" id="skillIL">Ice Demon</div>
+        <div class="card-dpm" id="dpmIL">&mdash;</div>
+        <div class="card-unit">DPM</div>
+        <div class="card-rel" id="relIL">&mdash;</div>
+      </div>
+
+      <div class="card fp" id="cardFP">
+        <div class="rank" id="rankFP">&mdash;</div>
+        <div class="card-name">FIRE / POISON</div>
+        <div class="card-skill" id="skillFP">Fire Demon</div>
+        <div class="card-dpm" id="dpmFP">&mdash;</div>
+        <div class="card-unit">DPM</div>
+        <div class="card-rel" id="relFP">&mdash;</div>
+      </div>
+
+      <div class="card bw" id="cardBW">
+        <div class="rank" id="rankBW">&mdash;</div>
+        <div class="card-name">BLAZE WIZARD</div>
+        <div class="card-skill" id="skillBW">Flame Vortex + Dragon Blaze</div>
+        <div class="card-dpm" id="dpmBW">&mdash;</div>
+        <div class="card-unit">DPM</div>
+        <div class="card-rel" id="relBW">&mdash;</div>
+      </div>
+    </div>
+
+    <div class="gapwrap">
+      <div class="gap-head">
+        <span class="gap-label">How the classes compare at this build</span>
+        <span class="gap-value" id="spreadValue">&mdash;</span>
+      </div>
+      <div class="bar">
+        <div class="bar-il" id="barIL" style="width:33.3%"></div>
+        <div class="bar-fp" id="barFP" style="width:33.3%"></div>
+        <div class="bar-bw" id="barBW" style="width:33.4%"></div>
+      </div>
+      <div class="bar-legend" id="barLegend">
+        <span id="legendIL">I/L</span>
+        <span id="legendFP">F/P</span>
+        <span id="legendBW">B/W</span>
+      </div>
+    </div>
+
+    <div class="derivs" id="derivs">
+      <div class="deriv-item il" id="derivIL">
+        <div class="deriv-label">I/L &mdash; marginal DPM</div>
+        <div class="deriv-value" id="dIntIL">&mdash;</div>
+        <div class="deriv-sub" id="dMatkIL">&mdash;</div>
+      </div>
+      <div class="deriv-item fp" id="derivFP">
+        <div class="deriv-label">F/P &mdash; marginal DPM</div>
+        <div class="deriv-value" id="dIntFP">&mdash;</div>
+        <div class="deriv-sub" id="dMatkFP">&mdash;</div>
+      </div>
+      <div class="deriv-item bw" id="derivBW">
+        <div class="deriv-label">B/W &mdash; marginal DPM</div>
+        <div class="deriv-value" id="dIntBW">&mdash;</div>
+        <div class="deriv-sub" id="dMatkBW">&mdash;</div>
+      </div>
+    </div>
+
+    <div class="notice" id="notice8" hidden>
+      <strong>Peak grinding output.</strong> This setting compares each class at close to its maximum sustained
+      grinding damage: B/W at 8 targets, I/L and F/P at 6, which is the highest either was tested at. B/W's
+      8-target grid is extrapolated from its 6-target data rather than measured directly.
+    </div>
+  </div>
+
+  <div class="summary">
+    <h2>Summary at high-end stats</h2>
+    <p class="summary-sub">
+      All figures below are the fitted models evaluated at <strong>INT 3500 / MAGIC ATK 1700</strong> &mdash; near the
+      top of the tested range, representing a well-geared mage. Percentages are measured against the highest class in
+      that row. The final row compares each class at its peak grinding output rather than at a matched target count.
+    </p>
+
+    <table class="sum-table">
+      <thead>
+        <tr>
+          <th>Targets</th>
+          <th class="c-il">I/L</th>
+          <th class="c-fp">F/P</th>
+          <th class="c-bw">B/W</th>
+          <th>Best vs worst</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="tgt">1</td>
+          <td>154.7M <span>9.5% behind B/W</span></td>
+          <td>155.6M <span>8.9% behind B/W</span></td>
+          <td class="lead">170.9M <span>highest</span></td>
+          <td class="spread">B/W does <strong>10.4%</strong> more than I/L</td>
+        </tr>
+        <tr>
+          <td class="tgt">5</td>
+          <td>633.6M <span>7.4% behind B/W</span></td>
+          <td>624.3M <span>8.8% behind B/W</span></td>
+          <td class="lead">684.3M <span>highest</span></td>
+          <td class="spread">B/W does <strong>9.6%</strong> more than F/P</td>
+        </tr>
+        <tr>
+          <td class="tgt">6</td>
+          <td>746.0M <span>8.8% behind B/W</span></td>
+          <td>750.4M <span>8.2% behind B/W</span></td>
+          <td class="lead">817.9M <span>highest</span></td>
+          <td class="spread">B/W does <strong>9.6%</strong> more than I/L</td>
+        </tr>
+        <tr class="mixed">
+          <td class="tgt">Peak*</td>
+          <td>746.0M <span>31.6% behind B/W</span></td>
+          <td>750.4M <span>31.2% behind B/W</span></td>
+          <td class="lead">1,090.5M <span>highest</span></td>
+          <td class="spread">B/W does <strong>46.2%</strong> more than I/L</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ul class="sum-points">
+      <li>
+        <strong>At high MAGIC ATK, B/W leads at every target count.</strong> This reverses the earlier picture,
+        which was based on a MAGIC ATK ceiling of 600. Extending the range to 1700 changed which class comes out
+        on top at single target.
+      </li>
+      <li>
+        <strong>Single target contains a crossover.</strong> F/P leads below roughly 900 MAGIC ATK and B/W leads
+        above it. At 150 MAGIC ATK the order is F/P, I/L, B/W with a 25.6% gap; by 1700 it is B/W, F/P, I/L with
+        B/W 10.4% clear. Move the MAGIC ATK slider through that range to watch the ordering change.
+      </li>
+      <li>
+        <strong>Multi-target ordering is stable.</strong> At 5 and 6 targets B/W leads across the entire tested
+        range, with I/L and F/P trading second place depending on MAGIC ATK. The top-to-bottom gap stays near
+        7&ndash;10% throughout.
+      </li>
+      <li>
+        <strong>I/L and F/P are close to each other at high MAGIC ATK.</strong> At 1700 they sit within about 1%
+        at single target and within 1.5% at 6 targets &mdash; much tighter than the 4&ndash;8% separation seen at
+        the low end of the range.
+      </li>
+      <li>
+        The Peak row compares each class at its best sustained grinding output: B/W at 8 targets, I/L and F/P at 6,
+        the highest either was tested at. B/W's 8-target grid is extrapolated from its 6-target data, so it carries
+        more uncertainty than the rows above it.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ================= METHODOLOGY ================= -->
+  <div class="method">
+    <h2>How this model was built</h2>
+    <p>
+      Every figure on this page comes from in-game DPM measurements taken by the YunaMS test team, fitted to a
+      quadratic surface. Nothing here is derived from server formulas or datamining &mdash; it is empirical.
+    </p>
+
+    <h3>Buff conditions</h3>
+    <p>
+      All tests were run with the <span class="cmd">@buffme</span> command applied, giving full mage buffs plus
+      typical party buffs. The reasoning is simple: on this server, mages very rarely boss or grind
+      <em>without</em> a full party buff stack, so testing unbuffed would produce numbers nobody actually plays at.
+      Buffed conditions are the realistic baseline.
+    </p>
+    <div class="bufflist">
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAADmklEQVR4nO2aMYrbQBSGv90sKX0Cn0CEhZDG5AAmcRdwoVphXbtwt+DCkM6FaoeodmFIpwQfILgIBJagE+gEPkGK35JHGo0srwNZafMX2mH09Gb16enN03iu3kx+kunXl7fA12+/aaYeKbBNUmDo9YE9/b9ob+vD+1fA648/gOuzrnxSutEfk7fnVZNIkjRv9/ZbYDQJgXUwBEaLLRCvpsC+Nyxd29zeNbr06fN34P7uLa2mfnX94iWX8TblR2WW59pL9ew32x2tpn5Tf9rJe2oQCpZAEs3yftnEKx5hL/Yat559i6k7Y/0c3gvAC+ZkLCU/3DrsZ6W2ad8k7lsf6yeoF3mP87MZ40XJ3eX9frihyL6D1E9kGFs2J7OnGPfldhP75npO1A/qAXjjed5xILdZlGxO2EcO+wbqFnUzoxd0JpVGauDTNbN2hXpxBt0Ao0kErOdjqqTIVgQXotyhJvYaK6tq9sC+N6aKfYupF2ZTqZdugNGszNuk5SLnLzY1g9lPr96nvMWrgIy9lKQpraZeiPUi7yDv98ZTINmEHNmU2/4iAh4eHiqHESd/NMo9N/EpS71v8RJg3z+ybzH1Qqz7/ghYLw3ewymQbMPSZWa/P6vjbarAfhk09C9plHgZADsGtJq6s4bRfafGfZs9OqoHokcMbHLVlNo3/CeGf/uZSN2ibpcVGV0osrlcJm+Xf1eZ02Lq///1f6FGX0mKPFeUK9fe3t5Sld2VyyVl9NiYN5r4d6lj1HsA6S4kJ7EL86PO9gfTko1WDMV+Hccllwfeq6Dy2nr/ZorZGz5bTL1YrycbshpQ609SfxAA6S6qbIu0LbEXb1t6K1w+1ZYOa2+qZL0xHajXK76SSCKOXyjTvNvFu3nNaEpPw8VeyniPAbxjXuokdamWvcnbrMLVY0e/Gfdm/rHZSy7eWhHo1kqv7umwGuMFwHoOx1WRKVW8TZln7bYtPQGdlf963qa6Ql0qsDdlFc6unG0/DddVhXnXUZi7fsfrFvXmql91Mdt2VXO5nhP1eD3FnTFsud4H2+e56jB1M7v7IRkhHfteAKRJlJ9drdc1zia+X3mtJA92Rnepi9SdM6vBXsz6B0IhMPC83IMruzfn3dmdGSdi/RT7OZAm5V8y7FrSfAKZfQ8Y+QvO5y21mbr2DGr/oGsHmJv9goz9uXocb1Xq93fvaDX1K3t3qfYSPk2Jd+t3lxaoS2L/NCXeUoup/wFBP4g3yhUbDgAAAABJRU5ErkJggg==" alt="Mana Reflection icon" width="62" height="62">
+        <figcaption>Mana Reflection</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAEAUlEQVR4nOWaoZLjRhCGv01tpSpET6AnGHIgROCOGmyOxWBhSsB10GDpGTjUwDBloDq4wGGJgWgMBEKO6An0BHqCgN+y2hqPTpsFWU9+slOj0Yz8qae7p1d3Py7+ptPXLx+A3//4ylvVzx/fAe9++Qv47r9+mH+ve/254O3Sq0OdadeB6Vygf/pd42N+/e1P4POnD9w09bv773+g4+1cSve7F+/fnwdlqx2Qz3o6RVkD1Xpx7tkdj0yj/vqZ92XFTVO/H7/8fDgAjw8PQLUeu/pSvX7mGKnLCvW7xUCyPWpr5HT5M6t9PB6Bpm0nzhwXde1l7XpZYbkvgdl8BuT5kksqGjnuW/yZoWdveWstzMjQzHFR9yXevqbztvLfqni/VLFTl2SFRbHl5V4lJN/b6A1rlXHFRV2ZhnKJkHwr90e70X7f4n3pGUI7KhbqlrdyN+txQ/Lvsv4+1D/ulxQ9ilP+OMwupVio20xavEOyVmi5Ho5H4OE0z26k397ry0YSsdd+0HvLgBioPz4+AMvl6nyhKPZci6PWCvPZ9TdjGatd19d3i91R0pVMJl/2T3XaMxtioP78fAAWi8fBZUtdbcvDWvlmdwASc6/Pe56vgL3xG+PyY2oXxVtioC7p7G1ZpknP0Xr3S78LkKb9yCpg2VahuGHfquRXDeqoKgJ+XiE/k+fz8xjf57hsBiQJE7Vc7YC5oah3G4rZoXwpFupWsjBZc+iUJFkrf7201v+pIuDngLYC4+/9cSt3LiEcR/dlDbTNMIcR9cvq1/V8MxbqPm+ftI2psvKi6Mcs8xmQuQTYFiWQZdlghqZpgDTtq/h2TrtiiL10w9Qv6uvKYWymZqWMwl6t6t5Snevp5rlO9T31qqrOV+u6b2fOVNa9+f3Vu3w9phxGmlID8WVZFsWwx7bHNX31WKjvJpxHFV+VeVttNivg6WlNmLcdc1KSAMV2zbUMMaS4MkfJ/x/aFMmf7DYrYPE0LGepf1sMo4RVZU7+Vn71Jq7M0T9rSk3bnNt1XQP7Yk1n8bJm+e8QV/UrgioYOOforFy5UEhtuQcK5kQTTS+oW97K+ySHA8qqBmaGkNhbZjZj0dtQlLUZi3jvi+3g3tRE1qYeZpSWfSzVLylkc35CbtmXxRaoXEZHvcth4JJ32zZ8i3eapEAT+EIjOW2UlHio218/Rb7dZ9khPPyKP3npiok5kkVDPRl+fzTlrC+PIX+uvLxp+nl0JvLl8/ZXH1cs1K10krdxVFKPT2iWL+ksPqSQBzt5laYBGq9GENINU7/Td472i7uqboBkQk3LZ19WJddioVXmsW8nfyOgGsTnTz8RA3VJ7PUt4duUeN/816UX1CWxf5sSb+mGqf8DyNIuNR51NwYAAAAASUVORK5CYII=" alt="Elquines icon" width="62" height="62">
+        <figcaption>Elquines</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAChElEQVR4nO2asWrbUBiFj9PQ0U/gJxDFULqYkNnQzB20BVLquUOhW4ZsgQ6dUxro5qGzC55D0BAImKIn0BPkCTocqz3Kr6te24rje61vsIUsi5tPv4/+q9zem8kdSu6/HwH48es3dpXTt68AvH5/C+DguQezPod8U9+jZPCcI2rk87dbAJcfjhC09d7Bi5fYzHee5wCSJGl3ZA1cz3MEbb21oed5Tv2t4zpzwNYP2zrR1/wBwEe0WffNl7GzXtKWe/peni3p1x7TWW8P9d1MZ73ky3gE4NM8Q1nxxKfu1beex0VnveT4ePh3O5X90+kUbvfWd78+VCp01oHsYgJgsVg82p8XBYD05AR17tfzTfbVOp2laYo63yQZDABMZzNU3ZP1fJN9tb4J6tsy+Zmh7F5cudRZXwXre9UqJ/Fa33y2z1xXXPVNtMp1DErSf0DQ1p3PYTSzfTqQ5ZGzWe0xTHR/RudXDZ+eDYDYrKvF8fkYwPxijlXcK667bOW78nvg9bm5efyt5Rwg6QPICiBo6zUJQ690bC1abCczHA7xvy7Shfpm3ts7a1YE/szRmevqnti0sb61am2iE+0ibU0TnZW6OpkYrRP+raw2rX7dVt/akS+3HUnP/ZzL2hTXu+k+dY40TfSpiI/vSkZ5uLezJ5+uKS7r9K2m+Xr17l/HR0PMb92jtqx7m/o2hfy71Lis0y7dq2nFpv42/4NH4rJOrG97HbZvWonRuqKZ0/wb2CaxW/fJnO0Tu3WyO75JjNavswLA2WjTFUl639Wep7n/8SEu6+r7Kdy7Pl2VgK33uM7Rrrhry3e7cNVX+Cvu7OpSriXcTeg7+NWlFeuE7ncT+iYBW/8DIHZtnCsoBzcAAAAASUVORK5CYII=" alt="Magic Guard icon" width="62" height="62">
+        <figcaption>Magic Guard</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAEXElEQVR4nOWaT2hcVRSHv4lpiAUfoi5SnIXF3Qj+3QylGytkoatCxFmIiwhDEYQIXSmMNOsushIJmPUUBttNsgjYCA3yFqI14NuIFGTEVrHIE6uGQF385r133tx3J5OxaOf2WyTDzfs335w599yTW3up/SUZX39yCvjs0nX+D9LoDtBqtfKRbrcLROnxfOSVN54HXnj7C2DmP36+e8isflnf9eZTE1woSZIjHd9oNIbOle+drV3gbgJwpnWazL2Ov/zhVeDshVNMt/V75funXgqciI4P/XU/ms1fPxHNAfvMAwnFpyTfe3t7wK/9dMS9GssvApe5ynRbn+w0N7JPLEWVR77lZAzYz0esb6Eo/yY+/JsTlvVxcsVvG0VEzkQHwB/MUo711sabQGd9FUjTlMyx3Lu+FeXy/V6vTfEpVROKdfn+frWfjxyLAB5lDvib+XxkNK7v7+I94LWlRfy+r28Uvne7nwN3mM3vqGezs0Eo1gfvqXO0S6S92/lr13e/X3yGm71tDvOt2fT0q8U8SmqezRCKdeFWF+KXtZSqWJ+JIHP2731rxCXcWLfoXf6w1ifLMDBfeWS79w5l36Jer1N2L0b79mUY+1QiROuDqFoZdbIy9NbuDrAdb1Ye01vrUo5y4fOtrNLnZnGoKSX1VEn8FWFaF4N36VQ11necXAOiqAhJG/E+XN8aedlmdPMMLqFY99WM6drPZDXMu3Gbsu/V9hGnX+CwjO72BUKcTdUDsTWjsJWjRb6FMrrcNxafHToy2R7OLeK5ZgPYWR6OeHsFnWur/EBm09rMQ3NkHQG5HweZkG+L617m3OpF+Hzbc1XlqwoaZJ74L6baelW97qDMYyvHjxfXgXPtolq0vp9pLADfJjcrryZc3+OcZQnFuo/BnLoynPW7y8Xa3q7z5U8/bYZxa0brW4zvPkTr7szqWyWtL31E1nP0MY5vId/e3GIIy7rtxpRn0+pVkpBLH74Vp8XnWxWOeDw6BiTNG0y19dJsavvrozuPtud4bru69nh9ZZGyS2GPtPlknPgeENRsKqxv2xGw9bpFnm6kRSaWV7l0c4hwfS+ttMjWsr6OQCCxPlanV8j3ysXz+YjtsZw0pb79BMTo/O369nUEbul1gLH+dKc+NGI74r34CtmaX/0tIel/9m8DJ6MFqtwLn+9r67vA3RSgHi1QjvVbaZ/Q+jC+tekHyXmy+Jbv0Txcf4zMvXBrQNe38vePDN99QLD9de1+cKOcoh3i7Wm5vVzhRrzre/PiFlBLD/CvjEPvfvn+n+Hz6mKjfHAdU724vi1PpnWgFh3kI8ow7v8zRCjWfcjTZKjCsde50il8/14vvj8pD2as+1CMdpbfpzybCt83QXGvyltsdT7F7suAR/oRmXufXR9TbN27ShJ2V9ZkjN5dIY7qO9mY8hqmpn2Oo3eAxXE88Q2azebE57rI99kLZwjBupB77SW8P5Hvqd9dWrIu5P7+RL7FFFv/B+wvxm7J+hKbAAAAAElFTkSuQmCC" alt="Haste icon" width="62" height="62">
+        <figcaption>Haste</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAADyklEQVR4nOWasWrbQBiAv6Sho54gTyCKoXQRIbOhnj1oK6TUswZDtwzeCh40u9TQTUPmFDSH4KFQMEVP4CfwE3T4T9Ivnc5V7JRW129oxfm/k/Pdz38n+c7ezL5T8uPLFfD1209OI2APkK8BxjfAnuDEMYV3b18Br98/AufPMuJf4UL+076j8PLo4YqiAOM7XudABkAwvgHCMDzpy8LHz4/Apw9XDNr62fmLl/wh37djIF7kQJaMAaLncb/OCwZt/eL0IYzvTe374WEF7PK76vr6egZkCUDB87j/X603fKd1fts08x6ew/3wrcv6Zyxa9HdzOb4BdrKOAmXGSzuLvOc4rm+iGb51w2bdGSR52YEjy7V74xtwZ7xr5A6iOt4b6+yBON20gsRQA/PX76uGcJwARZ5W10JA0G63M944rkfr+g7t2uWP9RrJy3CaAKPRpP1pUs+PyfKAKr64S6tI43uatEYuM757nrfb+2qc2MzSvhXjo/VwegsUdwtgu32orqV9NLrujJRru0VotCxySt/2+HakjY/WBe1Ao/PVjtSmBVe7vedxRdr4aN02XVI/22+3W6C4mwPhdEk1Dzo71fV2uqzidV+s9wXuu9f4aF0s2pSe2oxGI0qXHb12uyqmK7/reetgMepsHrD1xhsB89Zqk1JX3NpikXf7juc5bt8acR9PJkC27H6eCse1ezNLSQQQJZRPDr6/EdCmtQ/70+M4ZUxfrEsmFSRAlqS481jclM66K8BhpG9znLrdleUaX6wLtntxIEhlsHP0OLR7mWFzl4O+Bb+sC7Z7oXRTr53yr2s1lVpu+k4mrZjGfIpp4aBvwUfrNuZJ1FoFJVO1++z+vt1X+dZVRY8m89lwf5ABW3f+qlG+xU3p2s+YGKsyaMS9+O741FGp+lR03/cw+vHF3l302TOa/FZ1xvQ1+0fHjqXHz6x+WTdZXqRAvLB27Zs5EM9q33oXruuMRue9XDdaVmMgjJaA3Kp8nkop1xbf9zAuXL41ek21r22a7ueU7vvgu3XxXfqo/blqtj0bGt1Lr7syvtyrDwO23vVGQNUWF4dreePJ39rP2LhmT8huI4Awwf83AuZvdeCqGDaHjfa5lwvPrIfJb7utblNgttgA99kNMInXwCrLDvSaxXErXufxU/HFep+zAPav9+JPiNQIruqu4+VXuaD33TVDti5nBuX84FNPgK1UZZipdcDeS+oZWB1VTwSp6IM/cWdyXbuXs4QuokuAQNWEfZEecePAqipi9DDie/CnS8/0mV5BTpr+m4hvYcDWfwGkAx0ru+iZHAAAAABJRU5ErkJggg==" alt="Holy Symbol icon" width="62" height="62">
+        <figcaption>Holy Symbol</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAD1ElEQVR4nO2aMYvjRhiGn70cKf0L9AtECIQ05tjakKtdXBdwiOstDOlcqDtw4XqPGK5L4XoPXB+HikDAhPkF+gX6BSlej/RZo9HKTiDxbN5iV4xH491nvnnnm0+6+375O15//PoG+PjpT57ThBqomXSu7adVUQDZet251/a8VD/+8A3w3U9fgFdXj/Kv607ULe9pnj17m3OuuQ7pqmWST4Da1c2nYc88zztj2pZQu4MD3v/8hpum/vo63rE4tryX+7Jp3xRFb0+CuVJLjP1ilgN8uPFYf/1PDRTyPh4/A/ff3gMr54DH+bTp+ff1MqjbKBfdnsh2AE9PiuDWvzcPObDcttFvZyBcM2P0MqifKQdY7R2cSCuyq+oA1K4EyObAdNplL9kZCP1njFKnHkb5spCHHIGq2tPhfVLdGSfLMqCqKvwMuKrGz96Z/wy6u5Q6dSvv2UfAHVZXfKVln2cTYDHPmpE3g6StXhJ1SfHtr6vePiG9WM/rdMPU71599TXxzNF6i/IQ+bc7FHiKxdZxrdbG6eU2u32Fj/gs4jPK2m+Y+sWxLv+2vOfzDO8V0qGsgM3jE3DYLZuW2bQ7q7PFY9PnUqVI3Z4+rc73S4CqqpufMYm32J+1L8b8kf1Ki/rw6TNUlk2A2bT1gd2+xK8Kq8V82lyP9/hYpSAt6pcqFuV2VXiHAZ/DnFpGxHosl0yL+uk/M/Uq5ehENs3MOLqN4N2+60XuND/9Hh9quHaQFvVQyqTtfhlKvBXB1knCT61mwTj6Dlu3UdUyVFrU+7LFI/Du7T2wXHXd2u6m4h1mlI+bGd5hLHvVxkKNOTelRb1PNbB+aIkqqxZp6xWxjLLYls0IM7MQytLhPUqk3WAuZJU+9X4pgsPot7y1dy7m9PbUKUlzqJ5y/THsU6ce5oBWqioqXq33e4rt9fqhvSv0+EuVOvXwZBST6BanKm6XqxzG63/qY1Rsu+xtizy+LEvgt6fPgHaD84pNdwR5SziarcrHlDp18bAsrefYleBz9G4fSZaj3VcVGMnW5u1uPazUqZ+yi9HV9L4nHF1pDZzf1ZJWrLv90J6aFnV7NtWztdXWAZuHsYM+w9ucUPvaYVy9Ny3qUoz9mDeIZtN+fyhLcR2KYH02zFtKkbrUw94p7tunnmJp97/Ycw7l8ZK9S/nmaUWN4C2lSz2mMNu2mbqlO6wxtfmYbpm63hnU+4Pj3wCz9Rabb9jz5bBK2mqCr/0OncWkVN640y/L/pcPXzqd8kk3FsMqrpU9lcZlq5DdWarrGs/YSrxTebvUSm8+/jcl3tINU/8L+FAswO8V2PwAAAAASUVORK5CYII=" alt="Hyper Body icon" width="62" height="62">
+        <figcaption>Hyper Body</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAADTElEQVR4nO2asWrbUBSGf6elo55ATyCKoXQRIbOhnj1oK6TUs4dAtxSyBTxoTqmhmymCbg4YuhkjaKHgFj2BHqDoCTr8snzsoyvLkkMiud9ic+1zr/zp+Nwr6XZeD39iza/P5wC+3P/BU+Xtm5cAXr1bAjh77IOpznO+SN+uY9fsNIoiAI7jFLRU48OnJYDb9+dotPXO2bMXAL7dL3EMK7RLtHXdXmeUBltPc90KYwA0U80KTbCfxM3/t/hRAmCE6nnPUW6Cdlgn1dxL32Wo5p6jMJa0xvqgBwDBHOXcS9+MTYL53iHHPRfA1TxEOffSN2OHUYAWWbcAACXc04TneZsmHwBmo/HeIS8uutl7xk+n04JRpO/0CAG0xzopdi99r1arLCqKYwD9fh9ri5rwZpgb5YkoOYrJN2mw9a01DGuFfdnLPk4SYF03OEdq3xJtkRwaZfI9DEIAlzbQaOs5ua6R9f6hkb6LaYt1ZnM8mWOd8cwzZnzq3s/viPl6KDpK+tZZPnIsAEmSoNHW0wrz/ePXrKnvX5UMns5mOy26QhM5G5iiyuBe3wFIohhtsP7j99+siWsMUw3WdLubNYlpNUL0yqd4FPlP4JlZLFYAwrjh1tMKw/mSVYW/TLqUMFMde/fqk+1lcp2mdf9yTtXwqFhzJkGIVlgXFZ3wVxJmv6wMpiqu3RPpW8bqfmQP8hh4VUVGPRuNtp5WGN5ttLC53uYqkjVeV2Ii7eqaLbNW+i6O0v2zlnMeJbz50GDrW2uYrZog220b65pgqiSpRUN9MNV+GSUrjzwP9C2PLYzbdPerGuXnSBpN89tw/Vqe07ZefN0pkd9Jc7qG+1O1Xt63xrSSKU+Drf8/9MfAmOtytpMZqVcgJAyHBw3sunfZ++JRTNdcbbROpHsTSRIWfGpCnyU9SvHTjvZaJ6bnDSQMfADuYATAslzsOw9RNAGQiGdxplGKabt1zdZq2/MAjMXNSJ4B2iXa8ZUfYV8NKeb0rBPtniwG+d+naVLHNzlV6ySv9u9mNpHfqb8r5rStE9OeI9YW273GMUxLmmydewa5f/BYO+4ejsk8Qgt23KW5Lt1zL2EdDFu/Umd1oO/G7y7tyD29hDtNnyb0TRps/R8eVeBywIHtHQAAAABJRU5ErkJggg==" alt="Bless icon" width="62" height="62">
+        <figcaption>Bless</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAADbElEQVR4nN2asYrbQBCG/wup9QQiD6AupBGXXsV1AUNcO+DahbqAC0E6FaoNce0DQToX6nOoCKQTpEzQA4R9ghT/2R5rtHtyfDan/Zvbk1a7629HM7OrvXk3/4Gdfn69BfDt+x8AAQyGySAYWPN8fXj/BsDbTw8AXl2t12fXa/4h71+//+5vtK0BMJ/PHQ+vVisAUXg96l/uHwB8/niLcVOX9m3TapN3rsyn6QUHZdckjgDg3g9bpz+hfWsZAwBNW/febdu2cyUMw+can0Pjp065/YlRU6Lr0+dcR75Qp/J8efiHLtsYAEZgP6oDAEjTbF9mxSDolm13tfSzuh2/qBNEXVf7so6WZV3ty32xVD6n29B3tfSz3Xb8ok5Jy3bnkPruNZj7Rj0TvoJaLBcAqupg303dOBqdT6dPdrzdboGzsPtCXcdCGS8Nf7hx1aceiSrJbOfu7g5Abo2+waFHVabGT90Ig4rCEH35oM0uOTM20lKhaJkzxmft7F0aP3XKllEUWXHRQdj6ldd1HV+oa3O+Vv5tc+/GUccX6vJ3NcK46rLCJVWp9itUAOJJ0js2yhfq2rTqqgKwWMx6H2Z2Wdfnzoluny2v1yWAZBl1xwbAI+pCbt5UEAzdbeyJzU6x5dlsAiDLCgBxknTq+ELdPLEe6hd9PzPB4XGA2ctmsxlYX4/NF+r/Bf1RcZxgx9LN/lTetrF5Q/0MSe8u11YyL5eaivXryTMAwE/qYRwDKIo17NGOGrJKcq9WOQNkL1tmNF0uFwDWVXd33xfq5mhZAgBhFGHHnrFNSvMmRa5B6emlaPehWvvyOtmzTN7sXY5HyhfqUm3TtS2SIHsbb4q8eVeXbV5f+iJGibZpAGRZg84MAPCNOjM1W85Ii7TxPl+SvZwfzjlwyB99oU7bIm+5TuEV+hkp7UMozoltNmzfCfU7IN8umbtHSQIfqJfrQ9Q0aqNJxtTp9JCrDNnRlVfO39Uhe87G+KlL7d7lrjgb9Lg2K7fJ/R1ci73o8ciI7hd1964LZfv+kefdkzM2pWmK42xR+pMhGj/1yazfc9tkex9Ole5xSMvj9+s8M8jzgzwBxhN0RVkBME0DYCJ2XLVKsU8bqfzOneEMaZmrJI6Huf7oT9zd6NOlPEv4MkXeoz9dekSdIvuXKfKmRkz9H4oCv8vlJK39AAAAAElFTkSuQmCC" alt="Speed Infusion icon" width="62" height="62">
+        <figcaption>Speed Infusion</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAEOklEQVR4nOWav47bNhzHPyk68wn4BERhoOgi5AGE9rYCGm52kMwebgtwg4FuHjQnqOcbCHRzAz1AoSFAgUPAJ+AT8Ak6/CyLEiVFCXrNmf0OtiBTFP3h758ovvjpzUc6/f37S+CPPz/xXPXrLz8AP776C/juWw/m6/W9fMW8tfaAUgUQQns5Fvn2DlCmAnxTA0prIOABbXaj9iLpx7saUGggeA/ocgcEZwFdHEZ3TI9/e/8BePv6JddNPeZtjAZC8N9kKK69pZu3OVVlAfD+A9dNfU0j4WGKhycahPhJ91GvvFe+1CUmCA9hL/Hh39U55ug+Rq1RvtSFQWx/EtefQtK/xG+RzPmc3WdGPQQA1Z94utgyd3fnbmHgY6kPZEb9GUjmOc4nwTcwsIW8qHt/BIwuYcLupeJTZqnTOEqskfSZSuvtwlW5UBfbGvh19L/XsDxn3/9EuVCf9es5ebjUfQDIxHjCqKFWBaCMY1gnTnQZe9qicqEuWvbrVDHpfTP3hGWBQ1XRhSul3BfdJVVe1GcVegt2tfiAAXxwwL71wOPj4+Slznvg9uaGjj3BAK62zGeJZbv/n1A/ywC6VIBrArBvHfO8z9doDTycTgzZa62AeAlifZWaF/X1kdWUCiR4fLHk2uADEKeBOKssz0Be1GNNzYADgl8sHVco5q1mFhmW13/ypT4nXZaAbxYrnEUF5wCz2wG++ZrMmhf1NetbXTYFeFcaYLPZMBXdXfQEJBFd2outL2fT5ZHkRT1W6t3B9dlUyHlngEPVs5esGSvOoBLEdTHuc+6OojTW5UVd3hOlMdUdW8a8Ae7sOJ0K47hiEcUtB7W7AWj3e6C4v1859Lyop2vqqf0powDXWuD0bgckj6PgGuB02AE+qvWVAmisBcry85XSnPKinq6pi8QKnd0DTdsA1XYLBALQtBaoqi1g7RG6eQgAZVkBTWOBsqguZ6yc0SVDK1/z9iov6vJ2OH6HIe+RRbd7y8WCXaCzXfENWx8Zsq/KLXCUeQCGTlHdP9BFoUeZ1WQFTkaSZta8qKekRRJ3RbrcAjebzWSn5a4Ejk0N7A5bwN7Vl19t28/Aw6ka9V/cj1fg5pQX9YECDHlXSgHuWPO5VZf4OK1qzt1be+lTFLNfVr7UfavoaozgoMt/trUAx74msSFNpzCsYUQxY1GXUz3d7pqJeibpPjPq0/gGNWMlEyFltgJQztHlyLl+JJsWOn0o6nmvV2bUI4m1dREmAEorABORE9MNjq6iFN4hjFe2pKUuTP8rjNrI+qMuZqY+0jVTlz2Dsn9QdoCN/X+BPZcTg08hKhW51DDpDCjVe0680iv38s30/g/btMDb1z9z3dTlS/YPCns5pknekhbRE42sFbo+rp/JDdiPmp8/nfN9m6IC4qLQnu9bJWOo6HiLdVwx9Rfxnl6R7Hx8nhLPFF0x9X8A4OwSSBfc5cIAAAAASUVORK5CYII=" alt="Stance icon" width="62" height="62">
+        <figcaption>Stance</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAEs0lEQVR4nN2aP27jRhTGf94sUs4JeAIiMBCkIfYARLJdABWuGaxrFeoWYCFgOxWsNwhrFwLSbQIeIJgiQAAjmBPwBHOCFJ9IPZImIztFLH6FPZbJN+SPTx/f/Ln57v5POv31yzvg19/+5rXqxx++Ab796Q/gzf99MS/XW/2yvJvmCEQc4JwD2rZ9+uwY+2ZZbi/scr+vzn849+QxaZqcw8cW2G63wKeffwc+fnjHVVO/efPV13S86+MROJRboKoqOvZJ4oDgw+hkS/p+t7+wy4fPByDGyFNPwPJ2tEBRbIHdvgKSJOl/XjH1t/YP3Y3uT+zrugJidECapUCx2dAxs6TFUooxAK2vgSQrAOfS/r9397u+/flQ0n2j9MwTlwCRBthsSoa8o/l2XTH1Qa4fm4ahq4j98bgHnMuBNp7dRk/Aqg1ypxZwJKN2ko6PF2lpk+dACBWQZU/zdkQgSTPWQ33O0cXe+z2QJAUdCasQdoAjo6OrJ2DbEQ+k6WF0rnpp25qOt56GEtvybiNAll059YHD6J4SF+mol9uCjkGxKUcnW5YEgGSzAcJxB6Sbw6TtgcD4+XRufeatvK/qI0PeVmuhLrVtBMoip/OcqZNIlvczFABi6gEYR1ZfYr8tNvRv3Em1sy7qViGcXVyZLSlH5RUh7oHoA11mx7ZdaLssBdK0XIh86jdfurbVUI+Rrh5UfaLKxDq06hPrG2lWAt7f9Z/MyVd3/fGS4iT5uc5RX3qTqNpRnTPN+NVQBzpHlyxvS1pZK4p65+XlA3B7e7vQ2ePjI9Ds7xgahnjb+Db73cxIal3UrWLwAKbiE+ls+0DHz/IW16lC246OsecqpjN10anfRV0x9UHlqDGo9ZbQ7AAiDN3Dsl/mbSX2d+/f98fbOKdjjjsAB5DmB4Y+U9f67qVcNfV/yXXdt/VyeUuc1HEvk+LYXLcev6z1UpfEQLluneG/S3EUM1t8E0saT60916XTvEpTc5mLXy4bZ1rPLGst1L3XnNO4TNY8lnLdcpq2H758WejMOvpcHL1J5GySrkfXZt+4a6GeZTmwr2q6MfklstWiuEp6AvaT6fGXyPtANzfR+Lr/fC3UNRI5HEpgt9v3bWbenZc4zLNdyPRlr0Ht9Y6S4kyBokrDesJUy/X6NO/tWdOqffl61kV9Kjt7aNlbXe4b03Mt7+U5BavVUHeOkc/sK6BIW54aJdm5gOfKzgtMR0l1SJj3Fmk11OdkblhUxEnsXybL287AMIY7qzVS16rdtlDl4AGa8VrF1IOtlmt6nTtY82h2gI8ZsC2y/hq0XmvnnKV1UU9TB7QxoVvN0epC4wH88QhkF2fkrEyEbvU0A/IsY7hCKB/T3gHLfi3U0wQgkjBcMe1W8DZ0c1FBBuEccLi0sB+o9upMq3Oebr5NfYnuodSMVwW0rfaIrG+UNMdb2bYzc5GS3WPxXKkXG03x5SfTPSKn/TmmiFwL9Tnep71fztFXFMCQmRQmu8Smn9hzbTTFP81pcs7sKXvpiqnfaJ+j3XHng2fEe6qZkYv2dswpzyer3jPrRImDp/aIaE/Gxw/fswbqkthrL+HrlHhf/e7SAXVJ7F+nxFu6Yur/AIUVvAcaMda0AAAAAElFTkSuQmCC" alt="Echo of the Hero icon" width="62" height="62">
+        <figcaption>Echo of the Hero</figcaption>
+      </figure>
+      <figure class="buff">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAADX0lEQVR4nO2aMWobQRSGfzkm5Z5gTzAEQUhjfABDfAJ1AYWo3sKQLkW6QArVMhGkU+HaAR3AbBEIiDAnmBPsCVL8u9ZbPb3VrOyQ7NhfIcvj2ZX1zdu3b2dm9Gb2Ew2/vp0D+P7jN2wyVACQeQCoHIAKWUf/eHjmyWSy075are4/5d3bVwBev78DcPIon/pPOOUP6fvM5R0HeO8BhLAGkGfuYP94eGay2WwArMsZmnGg+4/XdwC+fDjHoK2PTl68hO2bJpxzOy2hmgPIs+L+r7rncfA8NC3dX81KNO7LAAza+mnfA2qvvkDbN8dBtv9tUrQuY1fH8Z73yrfMGBYPGZ8UrRMfbgAAh93I8SH6vqhhxuh2L3MLe5bBI2Xr8q5pYZn+tDg8VvJOKVtkRrdI13o38s5HioUD6kqy9BUA7yuA1WaLM5ehGRntfl1OAFzNPOzr4elZl76LhczlNM3fKgDOZWgcSzgmfJXuvy4cDvkmT8m69t02rftvI55Y40D3+qqwSNG6VSHu8R0A1GmFBb+rjW696qfX+U1A456vpRgZnXmeM0zDeh52Wvj7WrRcFDnaXmWUS9Ns52iQbvepW9dRPp95NJXGnv5ha25yeQkARY7m2rByvG7vJl3rugrv9l0flW9nFla3t2jc5xdbrzqryPcxpGtd14bdvi2k+9JtI1vWlTrbfH6uHB8NK8+Q+DyTonUZ5dOFA7CcHZ5XOQ56lhVld5ST4VvnioJ+tqfv0DPjHiIDsBS1Sl/fZPjW9UyV9J33rC5ioGm+8uyWb2vmfvjW+V1lfBP6pns3zQGMx2PE3VN1/Vio+bC5yFox8S0ZsPXWWpK1cjlVtpjjWZkQVovSNKnrdQM542XNzes5/uU6pZlefidpglgz5dKojH5tWp9TfmI31hx/KtaJNmHNf+85Ns/RvgbkCEQ5VmtY1hx/WtYttG+d49kikc9H8Zk7Zg0rLevHrfbLEdDv+7qX8S13IkhSsR6/2i9jWse3pvZ9VNyn+5RErNV+TfxsjMzxMcT/D6lYJ/q7ytomJrJlbtH0rcstBmx9xH2OfXfcdVcydc8Q0M4n5CG+WakPfsddHevcr8m9m9xLaOGyY+ZkqqoC4KsMzW6W46Dvwe8uHck9vYRx/39C32TA1v8AkdH6zuvE+XYAAAAASUVORK5CYII=" alt="Meditate icon" width="62" height="62">
+        <figcaption>Meditate</figcaption>
+      </figure>
+      <figure class="buff buff-split">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAEXElEQVR4nOWasarjRhSGv90sKfUEegIRLoQ0Yh9AkK1VuAs4xLWLC+lUqAvcwrXCGrZz4ToBPcCiIhC4BD3BPME8QYrfso48kuJ7Wcha/gtbSDMa6Ttn/jmW9eaHzV90+vvje+DTn//wteqnH78Dvv/5M/D2/76Y1+udvizvNIlfcSLX1i9qHyfZK0b59ffPwG+/vOemqb95+823vIT35th8kYGLxJ+3XxqBfd1y09TfXdNoZUg/GVpWIrcKYnLI0/8+J/08uT4CN0z9BbnetjUQmT2W0JTDPLZ9j/kIKJ6KaTLL/j5yvW2PAD4CHp3h3trMjhiTJS26IXvt0dEi9ucRkySfuarlUtfdl20/B6bydUqh58wrSY1TteNRkpZI/cS7iYHD+vK+V/vXrKnheQby/biHPD+Pos+w7xKpd+q91qqa5zdzrjFt9jVwWGec3cz0qNYZsDJtpGVR1317D91d6o6lav2aOjvUxpzTspSXa8T5sZZFPVSReoY8vpRsfpfN5XpsI6NrsFoKdZvlaZoDq10NHLamlvAAxazDlMb1D9s+X3U22/e0J4NhxtvrUbSb5kjvPwnLoS4ppzoefYZpzzZP6SKzO9UnfZttnp3b2F7d0b6vlbjOV4vqZGfDUqjrzrpEDdfRyz3rPAX2x57r7njpP+u8z2DbV73MRBhZa+f3LIX6SR4gX6fATlVbAZ3PrMq+xlCbfLaC94bU0TpPkQONPG2yurk8g9WyqMte94aQSIuTLD5JUmBTXlu1b7PLzG6aflZ4N1+H3gN16WmbAM61QJrkgHMOwNdA2/QU47g493rcN0CWp0Diy/P+zWYuPlVVAkTjdaIPFwJgmdTtvBZv50rG+InZrs7oclqRsS2fn58verWtO2+vVh+AqtJYKRDH/TOI+3AYf/o01NsS2Dw2wOHwB5CYp5MPDw90zKZIW8aSSFupb/WkGdLPH29W8SXWMHISrXCu9UCsrH00Hr/6QMdeEl2xnyIdMs7TGEjSnmO5a8/bzjecHnLidSVRf4Wtu4cnvVJVpUBz9AwpKgLiLdJTjEO1jWfIXvKD7/FnyMuiPsh4MqB6gs4B1lly/kzziDHG0nYdA1EU0dGdUnjURw7AxQyz3GpZ1K+R6op639PSTJAvWa84Hh0duSkpMpoPcjPF2UVz/20tkbpyq7YZX0BXo1vHyJKI81pYpUCxTejYJ/PAgdHa0AMIepjl0hKpS5lhH2qqkg7lZhtOBSaJ5n493TD1F/xbLfZRW9NlvLJ82MYz5jbXZLyUZRGw2zugKlIgTguGFfx9/FstKfOceYsizWKgqS9rcfG2Esu6nkt5tRlodobcB/VTtqUFUG1LYLO7/J1qHT30eFU1ko1A6zzQ7q/1K+mWqeudQb0/eI3PnNhnBVBRXhy1cQgzXr4RqtqO+3ecjXvL7b9xF75dqncJr1Ho6642T7xMBKa4SqIbqg7iJt43/3bpgLok9l+nxFu6Yer/AihxH4k/rpZ4AAAAAElFTkSuQmCC" alt="Spell Booster icon" width="62" height="62">
+        <figcaption>Spell Booster<br><span class="buff-variant">[F/P] or [I/L]</span></figcaption>
+      </figure>
+    </div>
+
+    <p>
+      Eleven of these twelve buffs behave identically for both classes. <strong>Spell Booster</strong> &mdash;
+      highlighted in the grid above &mdash; is the exception. It is covered at the end of this page.
+    </p>
+
+    <h4 class="sub-head">Two buffs were deliberately left out</h4>
+    <div class="omitted">
+      <figure class="omit-card">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAFRElEQVR4nN2av6rjRhTGf5uElPME6tKJsLCkMcutTdZdQAHX2kSQbgp1ARWCdCrUBZxEtQtBOm9wfQkqAoEl6An0BHqCFEeaOZZsX+8msCt/hRmfOTNn5pujM3+ffZX8xYi/f3sJ/P7mHz5WfPPqS+DF6z+BTz50Y94fz4R14fuHN99Nsm1YXCnctq1LHymBfqbTDyKfIylrMicJw/CKlbJNJ5KfX/3Ksln/5NPPGf07DINJtu6xjIBmuqEChMc43L2T4aTZ+ppnIzC3q1EfG+6HdfFXwbyvwkRgvCQKvE7VJjg/vjACaZPAoFWs9k6uRyA0wRXrgqCLuB/Wta+XjfK2VXFWHgTgYkcPEIcFULaJ09ExJwt3nHI/1IO3e8mWli/e1z+7lCG9zJtpTNW9n+dWbcplX8/bBDDI5+I/Gl2nhoxLdiF3waxf9HWJ3x01cOw6oFjvgPSYTKoQuUDnBmqS6Lqn9XWuyHvTM0Z9PePeo69rvtdhBtStj7t93wO7aA8cuxxI6q2TaEZFLpBcDckNQsMYebT+YGW9Z4z6tp1yf1+sC4z+o4Kz8HeJ0aRS8viafKin2jLyqvXPLEFnWDDrJxFGOttzBFahBZo2B1ZhBmzLLbC3U68VSG4RWydJq9Kl5/Lr9Uhu2mwZVzuDx5sMaLueRbN+0dcFhgi3Ru97YJtvgH12mGh2TQdsZ/Or4JL8RCffuLRYjNU6fo77Yd17ufQ7rz1bhfUcbPIN0Lc+EDzuH9/J8MP2waVNaICdqj8tvd0sKoCd8vg1ljti3cAp34W1LjMpc5c+zHxdcOwrIH0oz+YWjxZYm5hzo7RRvr5TdmUEhHs92yyY9TNxXfjOrAXSvHSqh+I80wLN99u3b4G2q4Cyb4Cu7tyv5v4SNqkfgSKzQF6WjNwvPq6fsJ7XCWBtDOR5xWWmdXwQr33+/DmnfCdpBYN7BmvvpW3eOc15PXPICGRZDJRlBUSrjEWzPkQY4Tu2EZCmFfC4m/Kt/S/bxUCZ1hOdpE2ANm8n8r41gImm5k1gAJtFwCbx9R+UdRl5sS6aVZlzD6xH0QrI05pTvjUTcbZ26X44wJ0uqyWG6PBr1BbVnO4CpCJXm65/k/hv4LB7xHGfPACxXXMPrFdlw5Rv3+8oi3AMdz2cHj3OIPFE/HuQRLIHtcCG7UR/XrNYrPPatWTgfvfoJMtnXTvhJn1wkkPx6CUArK14ZD8pJXOkzKbhPsTv9i0QEDLGftHUdnupLQA4lj5qDRynD+5X2iOlFsz6MJt+8e1LJ1pZf9bRlC2nc6reywiMAdjZA++yckzKDf6myUPvv8RWGPv2tJWfMZbP+ovXL4EgCnCxGZykrbxkvqrRs+z11eUt+jo3jM+3RyTLZ11WjmmdAEXkz7PTOmXsq6BXHMzPBd4P+vsxytawvp+1J176yvHMLkkQBB3QdQGQVn5/bmIVzI//Uyv84oW+8m0o4gJoTQWEvd9VLX6XdHIioE+v5cBLuJfeCy6OwH/AnGlBp/g+aVt3T7caeeNvdrLVjlPujVkzslL3JdCoeC/obzgYn6/aV1EARMYysls3KRDi+dZtE/mCWb9yWz29W9Owq/M3o1JqbezZ3GNfPln2FouLv8GbvMzIuXzXPId+C6BLifwWybzsLRaDbuG+fhJhpPe38CE6kVlNJLfwJ5orJE73T5adt6defFyXN4PyflA8Xve+as9/9aKj34EZGpWG8eRReNWRfHyX4RcuNgyftCWQ2PLj91+zaNafzV+X/vTLHx+uPU9A+L6X16Uawv3HCeFbsGDW/wWIapybOml+UAAAAABJRU5ErkJggg==" alt="Sharp Eyes icon" width="62" height="62">
+        <div>
+          <div class="omit-name">Sharp Eyes</div>
+          <p class="omit-why">
+            Omitted to avoid introducing unnecessary randomness into the data. Sharp Eyes affects critical hits,
+            which vary run to run, so including it would have added scatter to every measurement without changing
+            what was being tested.
+          </p>
+        </div>
+      </figure>
+      <figure class="omit-card">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAIAAAD8oz8TAAAEuElEQVR4nOWav4rkRhCHvz0fDvUEegJhBowTcWws7M0MCiaWOcUTTHagQOBsAsVjrHgCgbO1UbyYDgyGwegJ9ATzBA5KLZXU80e7F/hG/iXTtLqrNV9VV7daevgu/Qurv3/9APz2+z98qfrxh2+Ab3/6E3j3X9/M2/VefjTvIPCvdGiapi+fTNmX06J+1cD7TdSXvTDpy0EQXOn18y9/AJ8+fuCuqT+8++prXsP7EmlNcY5GfTPlgSDhFvuqNtw19fdzGnW8m5LLpP3oddT3qpzm2gMADbfZL5f6iHdec5l0a8yrBtZ9XQ/MYb9E6md4ZxEQxjugbWsmpD0APwgndkxRAeEmntTrvuIB34+AvbdlHvtlUZ/P2w9DoG0MwGmwIPysqr5m5Cvlpa4mpB9lz232S6F+i7dh4K24nuhrWlMDhB5gihLwAx+otingh/6kZeef0Jv0vc5etBTq19VRkRj1Q6wfRled8mgSnLmqrHn1cHWaqM7ojqmPdo6npmCIrRgIwghoFG8N0b0aBBFQFyUQZRugKUsgSBKgzgvAj/zBjmNT12j7aV5h517rxdw19RuxLvwkMwhRYeDyDqNM9SsndppqqJGWps7hDF09ih7d1VKod1G+i7FsKpMCrWmB1pRAvNsDpsrhLO9BnjfQCuIEaPOir5Fep5MBmroGgigC6nzqManfewDptgKy3fJivZvip+HJ3/c9bJaQdVEkOURLrnaeKbaDTc/v63UbGU17Veelth3SkOfc57Kon/uHYEloKpKnLb9Bwjvc7BjYe4z9IBIL2qZeB/TccO9qadSnEgbCQyve7ZjGLkBa1gDlamiqyyLZS/oek1yUJNOWF7Qw6iqoZCVzI9KVsM9rAxyPx7NtmrYF1k9PjL1k50YGmCLH5pbROupMwIVR7zT9mxKRmo1I4lXi+xJvUeD7wOH5GVitVsA+ibC5SDY0Yr/a6lx0PuMtjfr0X+pVUBiLhH3HzM0hMzTO/WCjPMoyoKn1vPq/5XXZWwuJOs85lx8+R3avQm+5281f1VKo73cRsE4L4HAACKMEMHWJjTXJtXr/2HngTbGuz2dkLE4tdE9PUtO0dX9XcoctsBzqZ6SmtTElEMYJYBjKQi6LQmy2drO7rKMiWU11RhcLlcnpzwuc0V3dMfXROYyE2KktgXRbA8+HDPCDCDBVAR2Jth4o2meiIfrT0mBXTS3hrX0ivexqCnYd1RmsW3d3EeD5Ev0n7pr6zDNHOX3dMFAZOAk5Ia2lGQs5kS4fjy+MVwbZn0r0h8m1t4JLoS7vDOQMe7/zgKd1DjwfAExZY6loTsL7+p5RX9XZZrV6xLIXiWUZ5fFxjT0X8vx4uMN2eW+rLfsY2O/Asn95OQBNWQBBssFSEaL6CciNb5HUSxvJP3bv/tjbF8syynXdMfUbX2a45ISNy1skREWaveuHS1n/kvRsWfqXGR1XebPXVljeWpdoaW+40r20B9x8cknLpS7q/n2QAYdDDKzXA/vrpy667Ma3qzm8RXdM/UG+c5z/xZ1Iol+z/3wdDgfmffX16eP3LIG6SNjLt4RvU75Ngb082F5Qul4DmXMqP0fC++6/Lh1RFwn7L1PCW3TH1P8F7YadIXz1SW8AAAAASUVORK5CYII=" alt="Maple Warrior icon" width="62" height="62">
+        <div>
+          <div class="omit-name">Maple Warrior</div>
+          <p class="omit-why">
+            Omitted because the test character has a base INT of 10, so Maple Warrior raised INT by exactly
+            1 point at every stage of testing. It served no real function other than adding static to the test
+            conditions.
+          </p>
+        </div>
+      </figure>
+    </div>
+
+    <h3>Why these INT and MAGIC ATK bounds</h3>
+    <p>
+      The tested range was chosen to span the full realistic spread of players on the server, so the model
+      interpolates across builds people actually have rather than hypothetical ones.
+    </p>
+    <table class="grid">
+      <tr><th>Bound</th><th>INT</th><th>MAGIC ATK</th><th>Represents</th></tr>
+      <tr><td>Lower</td><td>1000</td><td>150</td><td>Baseline stats of a fresh level 200 character</td></tr>
+      <tr><td>Upper</td><td>3700</td><td>1700</td><td>Current stats of the top-geared mages on the server</td></tr>
+    </table>
+    <p>
+      Anything inside those bounds is interpolation and well-supported by data. Anything outside is extrapolation
+      &mdash; the sliders are capped accordingly, since a quadratic fit pushed beyond its sampled range can drift
+      badly.
+    </p>
+
+    <h3>Why a 5&times;5 matrix, and why not assume linear scaling</h3>
+    <p>
+      Each class was tested at <strong>5 INT levels &times; 8 MAGIC ATK levels = 40 combinations</strong>, repeated
+      for each target count. The grid size was chosen deliberately:
+    </p>
+    <ul>
+      <li>
+        <strong>Linear scaling cannot be assumed.</strong> MapleStory damage formulas multiply stat terms together,
+        so DPM is expected to curve rather than rise in a straight line &mdash; and the interaction between INT and
+        MAGIC ATK means the value of one stat depends on how much of the other you already have. A linear model
+        would systematically misprice stats at the ends of the range.
+      </li>
+      <li>
+        <strong>Three points per axis would be insufficient.</strong> Three points define a parabola exactly, which
+        means the fit would be perfect by construction and would tell you nothing about whether the relationship is
+        actually quadratic.
+      </li>
+      <li>
+        <strong>Dense sampling leaves room to verify.</strong> Fitting six coefficients to 40 measurements
+        leaves 34 degrees of freedom, so the residuals are meaningful. Fits land between R&sup2; 0.9959 and 0.99995, which
+        supports the quadratic form describing the data rather than merely accommodating it.
+      </li>
+    </ul>
+
+    <h3>Model form</h3>
+    <p>
+      Each class and target count is fitted independently to:
+    </p>
+    <p style="font-family:var(--font-mono); color:var(--text-hi); font-size:12.5px;">
+      DPM = a + b&middot;INT + c&middot;INT&sup2; + d&middot;MATK + e&middot;MATK&sup2; + f&middot;(INT&times;MATK)
+    </p>
+    <p>
+      The <em>f</em> term is what makes this a true surface rather than two independent curves &mdash; it captures how
+      much each point of INT is worth given your current MAGIC ATK, and vice versa. That is also why the marginal
+      DPM values shown above change as you move the sliders.
+    </p>
+
+    <h3>Skills tested</h3>
+    <table class="grid">
+      <tr><th>Target count</th><th>I/L skill</th><th>F/P skill</th><th>B/W skill</th></tr>
+      <tr><td>1</td><td>Ice Demon</td><td>Fire Demon</td><td>Flame Vortex + Dragon Blaze</td></tr>
+      <tr><td>5</td><td>Chain Lightning</td><td>Paralyze</td><td>Flame Vortex + Dragon Blaze</td></tr>
+      <tr><td>6</td><td>Chain Lightning</td><td>Paralyze</td><td>Flame Vortex + Dragon Blaze</td></tr>
+      <tr><td>8</td><td>&mdash;</td><td>&mdash;</td><td>Flame Vortex + Dragon Blaze</td></tr>
+    </table>
+    <ul>
+      <li>
+        Target counts 1, 5 and 6 were tested as edge cases, since most time spent grinding and bossing is spent
+        hitting mobs of either 1, 5, or 6 targets.
+      </li>
+      <li>
+        Target counts 2, 3 and 4 were not measured, so this model says nothing about them.
+      </li>
+    </ul>
+
+    <h4 class="sub-head">Notes specific to Blaze Wizard</h4>
+    <ul>
+      <li>
+        B/W was tested with the <strong>Flame Vortex + Dragon Blaze</strong> skill macro at every target count,
+        rather than a single skill, so its numbers reflect the macro as actually played.
+      </li>
+      <li>
+        <strong>Megiddo Flame was not used at any point in B/W testing.</strong> The B/W figures therefore reflect
+        the Flame Vortex + Dragon Blaze macro alone, and would understate a rotation that includes it.
+      </li>
+      <li>
+        The <strong>8-target grid is extrapolated, not measured.</strong> It is the 6-target grid scaled by 8/6
+        throughout, which assumes DPM continues to scale linearly with target count past 6. That assumption is
+        consistent with the measured 5-to-6 step, but it has not been verified at 8. Because neither I/L nor F/P was
+        tested past 6 targets, selecting 8 compares B/W's extrapolated 8-target output against those two at
+        6 targets &mdash; their maximum measured output &mdash; rather than a matched target count.
+      </li>
+      <li>
+        Five readings across the B/W grids were inconsistent enough with their neighbours to be excluded from the
+        fits: INT 1000 / MAGIC ATK 967 at 1 target; INT 3700 / MAGIC ATK 1333 and INT 3025 / MAGIC ATK 150 at
+        5 targets; INT 1675 / MAGIC ATK 1700 and INT 3025 / MAGIC ATK 150 at 6 targets. Two of those broke
+        monotonicity outright, recording less damage at higher MAGIC ATK than at lower. Re-testing those five
+        combinations would tighten the B/W surfaces considerably.</li>
+    </ul>
+
+    <h3>Precision / Error</h3>
+    <ul>
+      <li>
+        Fit quality varies by class. I/L and F/P sit at R&sup2; 0.9977 to 0.99995 with worst-case error of
+        1.5&ndash;3.9%. B/W is looser, R&sup2; 0.9959 to 0.9999 with worst-case error up to 8.9%, so small B/W gaps
+        should be read with more caution than I/L or F/P ones.</li>
+      <li>
+        Because all three classes were measured under the same conditions with the same methodology, the relative
+        gaps are more reliable than any single absolute DPM figure.
+      </li>
+      <li>
+        A measurement uncertainty of <strong>&plusmn;1 MAGIC ATK</strong> translates to roughly
+        <strong>&plusmn;0.03% to &plusmn;0.20% DPM</strong>, depending on where you sit in the range. The error is
+        largest at the low end (INT 1000 / MAGIC ATK 150, about &plusmn;0.20%) and smallest at the high end
+        (INT 3700 / MAGIC ATK 1700, about &plusmn;0.03%), since one point of MAGIC ATK is a smaller share of a
+        larger total. This is well below the class gaps being reported, so a single point of MAGIC ATK drift does
+        not change any conclusion here.</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+  // Fitted coefficients: DPM = a + b*INT + c*INT^2 + d*MATK + e*MATK^2 + f*INT*MATK
+  const MODELS = {
+    IL: {
+      1: { a:-580367.44181774, b:4880.72071366, c:4.91736516, d:4992.05912303, e:4.64781219, f:9.41982604 },
+      5: { a:1066226.41494888, b:18794.09096471, c:20.13743751, d:14021.28123743, e:21.00725822, f:39.58833164 },
+      6: { a:-4526730.95922507, b:34130.36059208, c:21.13425246, d:2067.81132336, e:36.26331569, f:44.34790392 },
+      8: null
+    },
+    FP: {
+      1: { a:-120913.18568377, b:5588.45343521, c:5.36143723, d:5752.92414876, e:4.39478597, f:8.06754408 },
+      5: { a:-1785458.15382022, b:22799.66198887, c:20.90273459, d:19826.45400860, e:20.17433879, f:33.30609355 },
+      6: { a:643648.56668885, b:25718.61549090, c:24.95332218, d:17120.90701804, e:26.80004592, f:41.60587505 },
+      8: null
+    },
+    BW: {
+      1: { a:1185739.07349792, b:1096.75522423, c:4.77165864, d:2731.60063127, e:4.60634556, f:15.02916481 },
+      5: { a:1046214.03189852, b:19073.30766506, c:21.52915231, d:19327.12065709, e:19.33501729, f:44.37593905 },
+      6: { a:2469168.28340285, b:21836.16791837, c:26.23091919, d:18399.41780560, e:26.81034244, f:51.91167072 },
+      8: { a:3292224.37787046, b:29114.89055783, c:34.97455892, d:24532.55707414, e:35.74712325, f:69.21556097 }
+    }
+  };
+
+  const SKILLS = {
+    IL: { 1:'Ice Demon',  5:'Chain Lightning', 6:'Chain Lightning', 8:null },
+    FP: { 1:'Fire Demon', 5:'Paralyze',        6:'Paralyze',        8:null },
+    BW: { 1:'Flame Vortex + Dragon Blaze', 5:'Flame Vortex + Dragon Blaze',
+          6:'Flame Vortex + Dragon Blaze', 8:'Flame Vortex + Dragon Blaze' }
+  };
+
+  const CLASSES = ['IL','FP','BW'];
+  const LABEL = { IL:'I/L', FP:'F/P', BW:'B/W' };
+  let currentTarget = 1;
+  let ACTIVE = new Set(['IL','FP','BW']);
+
+  const $ = id => document.getElementById(id);
+  const intSlider=$('intSlider'), matkSlider=$('matkSlider');
+  const intInput=$('intInput'), matkInput=$('matkInput');
+
+  const fmt = n => Math.round(n).toLocaleString('en-US');
+  const fmtSigned = n => (n>=0?'+':'') + Math.round(n).toLocaleString('en-US');
+
+  const evalModel = (c,I,M) => c.a + c.b*I + c.c*I*I + c.d*M + c.e*M*M + c.f*I*M;
+
+  function compute(){
+    const I = parseFloat(intInput.value);
+    const M = parseFloat(matkInput.value);
+
+    // At 8 targets, I/L and F/P are shown at 6 targets — their maximum output —
+    // since neither was tested past 6. Their effective target count is tracked separately.
+    const shown = CLASSES.filter(k=>ACTIVE.has(k));
+    const res = {}, effT = {};
+    CLASSES.forEach(k=>{
+      effT[k] = MODELS[k][currentTarget] ? currentTarget : (currentTarget === 8 ? 6 : currentTarget);
+      const c = MODELS[k][effT[k]];
+      res[k] = c ? { dpm: evalModel(c,I,M),
+                     dInt: c.b + 2*c.c*I + c.f*M,
+                     dMatk: c.d + 2*c.e*M + c.f*I } : null;
+    });
+
+    // layout for two vs three classes
+    $('triple').classList.toggle('two', shown.length===2);
+    $('derivs').classList.toggle('two', shown.length===2);
+    $('barLegend').classList.toggle('two', shown.length===2);
+    CLASSES.forEach(k=>{
+      const on = ACTIVE.has(k);
+      $('card'+k).classList.toggle('off', !on);
+      $('deriv'+k).classList.toggle('off', !on);
+      $('bar'+k).style.display = on ? '' : 'none';
+      $('legend'+k).style.display = on ? '' : 'none';
+    });
+
+    // skills + values
+    shown.forEach(k=>{
+      const sk = SKILLS[k][effT[k]];
+      const sub = effT[k] !== currentTarget;
+      $('skill'+k).textContent = sk + (sub ? ' · at ' + effT[k] + ' targets' : '');
+      $('card'+k).classList.toggle('sub', sub);
+      $('card'+k).classList.toggle('na', !res[k]);
+      $('dpm'+k).textContent = res[k] ? fmt(res[k].dpm) : '—';
+      if (res[k]){
+        $('dInt'+k).textContent  = fmtSigned(res[k].dInt) + ' DPM per +1 INT';
+        $('dMatk'+k).textContent = fmtSigned(res[k].dMatk) + ' DPM per +1 MATK  ·  1 MATK = '
+                                 + (res[k].dMatk/res[k].dInt).toFixed(2) + ' INT';
+      } else {
+        $('dInt'+k).textContent = '—';
+        $('dMatk'+k).textContent = 'no data at this target count';
+      }
+    });
+
+    const avail = shown.filter(k=>res[k]);
+    const sorted = [...avail].sort((a,b)=>res[b].dpm-res[a].dpm);
+    const best = sorted.length ? res[sorted[0]].dpm : 0;
+
+    // rank + relative
+    shown.forEach(k=>{
+      const idx = sorted.indexOf(k);
+      $('rank'+k).textContent = idx>=0 ? '#'+(idx+1) : '';
+      $('card'+k).classList.toggle('top', idx===0 && avail.length>1);
+      if (!res[k]) { $('rel'+k).textContent = 'no data'; return; }
+      if (idx===0){
+        $('rel'+k).textContent = avail.length>1 ? 'highest' : 'only class tested';
+        $('rel'+k).style.color = 'var(--warn)';
+      } else {
+        const d = 100*(1 - res[k].dpm/best);
+        $('rel'+k).textContent = d.toFixed(1) + '% behind ' + LABEL[sorted[0]];
+        $('rel'+k).style.color = 'var(--text-mid)';
+      }
+    });
+
+    // best-vs-worst, stated in words
+    if (avail.length>1){
+      const worst = sorted[sorted.length-1];
+      const lo = res[worst].dpm;
+      const pct = 100*(best/lo - 1);
+      $('spreadValue').textContent = LABEL[sorted[0]] + ' does ' + pct.toFixed(1)
+                                   + '% more damage than ' + LABEL[worst];
+      $('spreadValue').style.color = 'var(--text-hi)';
+    } else {
+      $('spreadValue').textContent = 'only one class tested here';
+      $('spreadValue').style.color = 'var(--text-low)';
+    }
+
+    // bar
+    const total = avail.reduce((t,k)=>t+res[k].dpm,0) || 1;
+    shown.forEach(k=>{
+      const w = res[k] ? 100*res[k].dpm/total : 0;
+      $('bar'+k).style.width = w + '%';
+      $('legend'+k).textContent = LABEL[k] + (res[k] ? ' ' + fmt(res[k].dpm) : ' —');
+    });
+
+    $('notice8').hidden = (currentTarget !== 8);
+  }
+
+  function syncFromSlider(sl,inp){ inp.value = sl.value; compute(); }
+  function syncFromInput(sl,inp,min,max){
+    let v = parseFloat(inp.value);
+    if (isNaN(v)) v = min;
+    v = Math.max(min, Math.min(max, v));
+    inp.value = v; sl.value = v; compute();
+  }
+
+  intSlider.addEventListener('input', ()=>syncFromSlider(intSlider,intInput));
+  matkSlider.addEventListener('input', ()=>syncFromSlider(matkSlider,matkInput));
+  intInput.addEventListener('change', ()=>syncFromInput(intSlider,intInput,1000,3700));
+  matkInput.addEventListener('change', ()=>syncFromInput(matkSlider,matkInput,150,1700));
+
+  const classBtns = document.querySelectorAll('#classToggle button');
+  function refreshClassBtns(){
+    classBtns.forEach(b=>{
+      const on = ACTIVE.has(b.dataset.k);
+      b.classList.toggle('active', on);
+      // with only two selected, neither can be switched off
+      b.classList.toggle('locked', on && ACTIVE.size<=2);
+    });
+    $('classHint').textContent = ACTIVE.size===3 ? 'all three'
+                               : [...ACTIVE].map(k=>LABEL[k]).join(' vs ');
+  }
+  classBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const k = btn.dataset.k;
+      if (ACTIVE.has(k)){
+        if (ACTIVE.size<=2) return;   // keep at least two
+        ACTIVE.delete(k);
+      } else {
+        ACTIVE.add(k);
+      }
+      refreshClassBtns();
+      compute();
+    });
+  });
+
+  document.querySelectorAll('#targetToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#targetToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTarget = parseInt(btn.dataset.t,10);
+      compute();
+    });
+  });
+
+  refreshClassBtns();
+  compute();
+</script>
+</body>
+</html>
